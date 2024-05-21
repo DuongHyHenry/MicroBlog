@@ -1,0 +1,175 @@
+body {
+    font-size: 15px;
+    background: rgb(161,184,200);
+    margin: 0;
+}
+
+header {
+    color: #5E6769;
+    background: linear-gradient(167deg, rgba(161,184,200,1) 26%, rgba(25,75,105,1) 100%); 
+    font-family: 'Kaushan Script';
+    font-size: 22px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font-size: 20px;
+    margin: 0 auto;
+}
+
+footer {
+    color: #4B5866;
+    background: linear-gradient(180deg, rgba(161,184,200,1) 26%, rgba(25,75,105,1) 100%); 
+    font-family: 'Kaushan Script';
+    font-size: 22px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font-size: 20px;
+    text-align: center;
+    margin: 0 auto;
+}
+
+.container {
+    display: flex;
+    justify-content: space-between; /* Align items horizontally with space between */
+    align-items: center; /* Vertically center items */
+    gap: 10px;
+    padding-right: 10px; /* Add padding to the right to create a gap */
+    padding-left: 10px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo img {
+    width: 10%;
+    height: auto; 
+}
+
+
+.nav-items ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-items ul li {
+    margin-left: 10px; /* Add some spacing between list items */
+}
+
+.login-register {
+    font-family: 'Kaushan Script';
+    font-size: 20px;
+    display: flex;
+    text-align: center;
+    align-items: center;
+    justify-content: space-evenly;
+    text-decoration: none;
+}
+
+.content-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+
+.profile-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+.posts-list {
+    font-family: 'Kaushan Script';
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.posts-list h1 {
+    font-size: 40px;
+}
+
+.user-posts {
+    font-family: 'Kaushan Script';
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.user-posts h2 {
+    font-size: 30px;
+}
+
+
+#post-input {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-evenly;
+}
+
+#post-avatar {
+    border-radius: 15px;
+}
+
+.header-avatar {
+    border-radius: 15px;
+}
+
+@media only screen and (max-width: 767px) {
+
+    header {
+        color: #5E6769;
+        background: linear-gradient(167deg, rgba(161,184,200,1) 26%, rgba(25,75,105,1) 100%); 
+        font-family: 'Kaushan Script';
+        padding-top: 10px;
+        padding-bottom: 10px;
+        font-size: 15px;
+        margin: 0 auto;
+    }
+
+    .login-register {
+        font-family: 'Kaushan Script';
+        font-size: 20px;
+        display: flex;
+        flex-direction: column;
+        text-align: center;
+        align-items: center;
+        justify-content: space-evenly;
+        text-decoration: none;
+    }
+
+    .content-container {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+    }
+
+    .profile-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding-top: 20px;
+        gap: 20px;
+    }
+
+    
+    .header-avatar {
+        border-radius: 15px;
+        height: 50px;
+    }
+
+}
+

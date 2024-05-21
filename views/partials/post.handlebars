@@ -1,0 +1,58 @@
+{{! Partial for a single post }}
+<div class="post" data-id="{{id}}" data-username="{{username}}">
+    <div class="post-avatar">
+        <!-- the user's avatar -->
+        <img src="/avatar/{{username}}" id="post-avatar" alt="Avatar of {{username}}">
+    </div>
+    <div class="post-content preserve-newlines">
+        <!-- the post -->
+        <p>{{title}}</p>
+        <p>{{content}}</p>
+        <div class="post-status-bar">
+            <!-- everything that is shown in the status bar -->
+            {{#ifCond username user.username}}
+                <button type="button" class="emoji-button" onclick="handleDeleteClick(event)">🗑️</button>
+            {{else}}
+                <button type="button" class="emoji-button" onclick="handleLikeClick(event)">📖</button>
+            {{/ifCond}}
+            <p class="like-count">{{likes}} Likes</p>
+            <p>Posted by {{username}} on {{timestamp}}</p>
+            <!-- Heart = ♥ -->
+            <!-- font awesome trashcan = <i class="fas fa-trash-alt"></i>-->
+        </div>        
+    </div>
+</div>
+<script>
+
+    function handleLikeClick(event) {
+        const postId = event.target.closest('.post').dataset.id;
+        fetch(`/like/${postId}`, {
+            method: 'POST',
+        })
+        .then(response => response.json())
+        .then(data => {
+            const likeCountElement = event.target.closest('.post').querySelector('.like-count');
+            if (likeCountElement) {
+                likeCountElement.textContent = `${data.likes} Likes`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+
+    function handleDeleteClick(event) {
+        const postId = event.target.closest('.post').dataset.id;
+        fetch(`/delete/${postId}`, {
+            method: 'POST',
+        }).then(() => {
+            location.reload();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+
+        // you might want to "fetch" something...
+    }    
+</script>
