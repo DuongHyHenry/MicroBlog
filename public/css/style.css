@@ -120,10 +120,25 @@ footer {
 
 #post-avatar {
     border-radius: 15px;
+    margin-top: auto;
+    margin-bottom: auto;
 }
 
 .header-avatar {
     border-radius: 15px;
+}
+
+.post {
+    display: flex;
+    gap: 20px;
+    border: solid #6e787a 2px;
+    border-radius: 15px;
+    background-color: #9cacaf;
+}
+
+.post-status-bar {
+    display: flex;
+    gap: 20px;
 }
 
 @media only screen and (max-width: 767px) {
