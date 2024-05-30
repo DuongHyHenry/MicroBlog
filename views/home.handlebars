@@ -31,8 +31,15 @@
     {{/if}}
 
     <section class="posts-list">
-        <!-- recent posts -->
-        <h1>Recent {{{postNeoType}}}s</h1>
+        <!-- Sorting dropdown menu -->
+        <div class="sorting-buttons">
+            <input type="button" onclick="location.href='http://localhost:3000/newest';" value="Newest" />
+            <input type="button" onclick="location.href='http://localhost:3000/oldest';" value="Oldest" />
+            <input type="button" onclick="location.href='http://localhost:3000/likes';" value="Likes" />
+        </div>
+
+        <!-- posts -->
+        <h1>{{{postNeoType}}}s</h1>
 
         {{#if posts.length}}
         <ul>
@@ -49,7 +56,7 @@
 </section>
 
 
-{{! JavaScript for Emoji Integration }}
+{{! JavaScript for Emoji Integration and Live Refresh }}
 <script>
 
 /*

@@ -33,7 +33,7 @@ async function startConnection() {
         });
         console.log("Database connected successfully.");
     } catch (err) {
-        console.error("Error connecting to the database:", err);
+        console.log("Error connecting to the database:", err);
         process.exit(1);
     }
 }
@@ -140,7 +140,34 @@ app.use(express.json());                            // Parse JSON bodies (as sen
 // template
 //
 app.get('/', async (req, res) => {
-    const posts = await getPosts();
+    let posts;
+    if (req.query.sort === 'likes') {
+        posts = await getPostsLikes();
+
+    } else if (req.query.sort === 'oldest') {
+        posts = await getPostsOldest();
+
+    } else {
+        posts = await getPostsNewest();
+    }
+    const user = await getCurrentUser(req) || {};
+    res.render('home', { posts, user });
+});
+
+app.get('/oldest', async (req, res) => {
+    let posts = await getPostsOldest();;
+    const user = await getCurrentUser(req) || {};
+    res.render('home', { posts, user });
+});
+
+app.get('/newest', async (req, res) => {
+    let posts = await getPostsNewest();;
+    const user = await getCurrentUser(req) || {};
+    res.render('home', { posts, user });
+});
+
+app.get('/likes', async (req, res) => {
+    let posts = await getPostsLikes();;
     const user = await getCurrentUser(req) || {};
     res.render('home', { posts, user });
 });
@@ -328,8 +355,7 @@ async function findUserByUsername(username) {
         return null;
       }
     } catch (error) {
-      console.error('Error executing query:', error.message);
-      throw new Error('Internal Server Error');
+      console.log('Error executing query:', error);
     }
   }
   
@@ -349,8 +375,7 @@ async function findUserById(userId) {
         return null;
       }
     } catch (error) {
-      console.error('Error executing query:', error.message);
-      throw new Error('Internal Server Error');
+      console.log('Error executing query:', error);
     }
   }
 
@@ -371,8 +396,7 @@ async function findUserByHashedId(userId) {
         
         return null;
     } catch (error) {
-        console.error('Error executing query:', error.message);
-        throw new Error('Internal Server Error');
+        console.log('Error executing query:', error);
     }
 }
   
@@ -388,7 +412,7 @@ async function addUser(username) {
             [username, hashedGoogleId, avatar_url, memberSince]
         );
     } catch(error) {
-        console.error("Error adding user:", error);
+        console.log("Error adding user:", error);
     }
     // TODO: Create a new user object and add to users array
 }
@@ -526,13 +550,28 @@ async function getCurrentUser(req) {
 }
 
 // Function to get all posts, sorted by latest first
-async function getPosts() {
+async function getPostsNewest() {
     try {
-        return await db.all('SELECT * FROM posts');
+        return await db.all('SELECT * FROM posts ORDER BY timestamp DESC');
     } catch(error) {
         console.log("Failed to get posts:", error);
     }
-    
+}
+
+async function getPostsOldest() {
+    try {
+        return await db.all('SELECT * FROM posts ORDER BY timestamp ASC');
+    } catch(error) {
+        console.log("Failed to get posts:", error);
+    }
+}
+
+async function getPostsLikes() {
+    try {
+        return await db.all('SELECT * FROM posts ORDER BY likes DESC');
+    } catch(error) {
+        console.log("Failed to get posts:", error);
+    }
 }
 
 // Function to add a new post
@@ -546,7 +585,7 @@ async function addPost(title, content, user) {
             [title, content, username, timestamp, likes]
         );
     } catch(error) {
-        console.error("Error adding post:", error);
+        console.log("Error adding post:", error);
     }
     // TODO: Create a new post object and add to posts array
 }
