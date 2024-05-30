@@ -4,6 +4,10 @@ const session = require('express-session');
 const canvas = require('canvas');
 const sqlite3 = require('sqlite3');
 const sqlite = require('sqlite');
+const passport = require('passport');
+const bcrypt = require('bcrypt');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+require('dotenv').config({ path: 'OAuth.env' });
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Configuration and Setup
@@ -14,8 +18,11 @@ const PORT = 3000;
 
 let db;
 
+const CLIENT_ID = process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// SQL Database Connection
+// SQL Database Connection and Google OAuth
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 async function startConnection() {
@@ -30,6 +37,22 @@ async function startConnection() {
         process.exit(1);
     }
 }
+
+passport.use(new GoogleStrategy({
+    clientID: CLIENT_ID,
+    clientSecret: CLIENT_SECRET,
+    callbackURL: `http://localhost:${PORT}/auth/google/callback`
+}, (token, tokenSecret, profile, done) => {
+    return done(null, profile);
+}));
+
+passport.serializeUser((user, done) => {
+    done(null, user);
+});
+
+passport.deserializeUser((obj, done) => {
+    done(null, obj);
+});
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -175,12 +198,78 @@ app.get('/logout', isAuthenticated, (req, res) => {
     logoutUser(req, res);
     // TODO: Logout the user
 });
+app.get('/googleLogout', (req, res) => {
+    res.render('googleLogout');
+});
 app.post('/delete/:id', isAuthenticated, async (req, res) => {
     await deletePost(req, res);
     res.redirect('back');
 
     // TODO: Delete a post if the current user is the owner
 });
+
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile']}))
+
+// Define route for Google authentication
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+// Define callback route after Google authentication
+app.get('/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  async (req, res) => {
+    // Redirect user after successful authentication
+    try {
+        console.log("User Google Id:", req.user.id);
+        let userId = req.user.id;
+        let userFound = await findUserByHashedId(userId);
+        console.log("User Found", userFound);
+        if (userFound) {
+            req.session.userId = req.user.id;
+            req.session.loggedIn = true;
+            res.redirect('/');
+        } else {
+            req.session.userId = userId;
+            req.session.loggedIn = true;
+            res.redirect('/registerUsername');
+        }
+    } catch(error) {
+        console.log("Could not finish callback:", error);
+    }
+  }
+);
+
+app.get('/registerUsername', (req, res) => {
+    res.render('registerUsername', {usernameError : req.query.error});
+});
+
+app.post('/registerUsername', async (req, res) => {
+    try {
+        console.log("req.body in /registerUsername:", req.body);
+        let username = req.body.username;
+        let userFound = await findUserByUsername(username);
+        if (userFound) {
+            res.redirect('/registerUsername?error=Username%20Already%20Exists');
+        }
+        else {
+            let hashedGoogleId = await bcrypt.hash(req.session.userId, 10);
+            console.log("Newly Hashed Id:", hashedGoogleId);
+            console.log("Google Id:", req.session.userId);
+            let avatar_url = `/avatar/${username}`;
+            let memberSince = await generateTimeStamp();
+            await db.run(
+                'INSERT INTO users (username, hashedGoogleId, avatar_url, memberSince) VALUES (?, ?, ?, ?)',
+                [username, hashedGoogleId, avatar_url, memberSince]
+            );
+            res.redirect('/');
+        }
+    } catch(error) {
+        console.log("Could register username:", error);
+    }
+});
+
+
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Server Activation
@@ -265,6 +354,29 @@ async function findUserById(userId) {
     }
   }
 
+async function findUserByHashedId(userId) {
+    const query = 'SELECT * FROM users';
+
+    try {
+        const rows = await db.all(query);
+        userIdString = String(userId);
+        for (const row of rows) {
+            const isMatch = await bcrypt.compare(userIdString, row.hashedGoogleId);
+            
+            if (isMatch) {
+                console.log("Hashed Id found:", row);
+                return row;
+            }
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Error executing query:', error.message);
+        throw new Error('Internal Server Error');
+    }
+}
+  
+  
 // Function to add a new user
 async function addUser(username) {
     try {
@@ -343,7 +455,7 @@ function logoutUser(req, res) {
     req.session.destroy;
     req.session.loggedIn = false;
     req.session.userId = '';
-    res.redirect('/');
+    res.redirect('/googleLogout');
     // TODO: Destroy session and redirect appropriately
 }
 
@@ -351,8 +463,9 @@ function logoutUser(req, res) {
 async function renderProfile(req, res) {
     try {
         let allPosts = await getPosts();
+        console.log(req.session.userId);
         let currentUser = await getCurrentUser(req);
-        currentUser.posts = [];
+
         console.log(currentUser.username, "'s profile");
         let query = "SELECT * FROM posts WHERE username = ?"
         currentUser.posts = await db.all(query, [currentUser.username]);
@@ -401,7 +514,11 @@ function handleAvatar(req, res) {
 // Function to get the current user from session
 async function getCurrentUser(req) {
     try {
-        return await findUserById(req.session.userId);
+        if (req.session.userId) {
+            return await findUserByHashedId(req.session.userId);
+        } else {
+            return null;
+        }
     } catch(error) {
         console.log("Error getting current user:", error);
     }
@@ -442,8 +559,6 @@ async function deletePost(req, res) {
     } catch(error) {
         console.log("Failed to delete post:", error);
     }
-    
-
 }
 
 // Function to generate an image avatar

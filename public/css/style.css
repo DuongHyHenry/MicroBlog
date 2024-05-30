@@ -141,6 +141,23 @@ footer {
     gap: 20px;
 }
 
+.google-logout {
+    font-family: 'Kaushan Script';
+    font-size: 20px;
+    text-align: center;
+}
+
+.register-username {
+    font-family: 'Kaushan Script';
+    font-size: 20px;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    justify-content: space-evenly;
+    text-decoration: none;
+}
+
 @media only screen and (max-width: 767px) {
 
     header {
@@ -151,6 +168,23 @@ footer {
         padding-bottom: 10px;
         font-size: 15px;
         margin: 0 auto;
+    }
+
+    .google-logout {
+        font-family: 'Kaushan Script';
+        font-size: 20px;
+        text-align: center;
+    }
+    
+    .register-username {
+        font-family: 'Kaushan Script';
+        font-size: 20px;
+        display: flex;
+        flex-direction: column;
+        text-align: center;
+        align-items: center;
+        justify-content: space-evenly;
+        text-decoration: none;
     }
 
     .login-register {

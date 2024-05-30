@@ -1,0 +1,14 @@
+{{! Use the main layout }}
+{{!< main }}
+
+
+<section class = "register-username">
+    {{#if usernameError}}
+            <p style="color: red;">{{usernameError}}</p>
+        {{/if}}
+    <form action="/registerUsername" method="POST">
+        <input name="username" placeholder="Pick a username"/>
+        <button type="submit">Login</button>
+    </form>
+</section>
+
