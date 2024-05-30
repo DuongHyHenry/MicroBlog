@@ -145,6 +145,7 @@ app.get('/error', (req, res) => {
 
 app.post('/posts', isAuthenticated, (req, res) => {
     addPost(req.body.title, req.body.content, getCurrentUser(req));
+    showDatabaseContents();
     res.redirect('back');
     // TODO: Add a new post and redirect to home
 });
@@ -239,15 +240,18 @@ function findUserById(userId) {
 }
 
 // Function to add a new user
-function addUser(username) {
-    let newUser = {
-        id: users.length + 1,
-        username: username,
-        avatar_url: `/avatar/${username}`,
-        memberSince: generateTimeStamp(),
-    };
-    users.push(newUser);
-    return newUser;
+async function addUser(username) {
+    try {
+        let hashedGoogleId = 0;
+        let avatar_url = `/avatar/${username}`;
+        let memberSince = generateTimeStamp();
+        return db.run(
+            'INSERT INTO users (username, hashedGoogleId, avatar_url, memberSince) VALUES (?, ?, ?, ?)',
+            [username, hashedGoogleId, avatar_url, memberSince]
+        );
+    } catch(error) {
+        console.error("Error adding user:", error);
+    }
     // TODO: Create a new user object and add to users array
 }
 
@@ -270,6 +274,7 @@ function registerUser(req, res) {
     }
     else {
         newUser = addUser(username);
+        showDatabaseContents();
         req.session.userId = newUser.id;
         req.session.loggedIn = true;
         res.redirect('/');
@@ -344,18 +349,18 @@ function getPosts() {
 }
 
 // Function to add a new post
-function addPost(title, content, user) {
-    let newPost = {
-        id: users.length + 1,
-        title: title,
-        content: content,
-        username: user.username,
-        timestamp: generateTimeStamp(),
-        likes: 0,
-    };
-
-    posts.push(newPost);
-    return newPost;
+async function addPost(title, content, user) {
+    try {
+        let timestamp = generateTimeStamp();
+        let username = user.username;
+        let likes = 0;
+        return db.run(
+            'INSERT INTO posts (title, content, username, timestamp, likes) VALUES (?, ?, ?, ?, ?)',
+            [title, content, username, timestamp, likes]
+        );
+    } catch(error) {
+        console.error("Error adding post:", error);
+    }
     // TODO: Create a new post object and add to posts array
 }
 
@@ -387,4 +392,43 @@ function generateAvatar(letter, width = 100, height = 100) {
     ctx.fillText(letter, 50, 50);
     
     return newCanvas.toBuffer('image/png');
+}
+
+async function showDatabaseContents() {
+
+    // Check if the users table exists
+    const usersTableExists = await db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='users';`);
+    if (usersTableExists) {
+        console.log('Users table exists.');
+        const users = await db.all('SELECT * FROM users');
+        if (users.length > 0) {
+            console.log('Users:');
+            users.forEach(user => {
+                console.log(user);
+            });
+        } else {
+            console.log('No users found.');
+        }
+    } else {
+        console.log('Users table does not exist.');
+    }
+
+    // Check if the posts table exists
+    const postsTableExists = await db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='posts';`);
+    if (postsTableExists) {
+        console.log('Posts table exists.');
+        const posts = await db.all('SELECT * FROM posts');
+        if (posts.length > 0) {
+            console.log('Posts:');
+            posts.forEach(post => {
+                console.log(post);
+            });
+        } else {
+            console.log('No posts found.');
+        }
+    } else {
+        console.log('Posts table does not exist.');
+    }
+
+    await db.close();
 }
