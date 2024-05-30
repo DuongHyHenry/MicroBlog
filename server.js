@@ -116,9 +116,9 @@ app.use(express.json());                            // Parse JSON bodies (as sen
 // We pass the posts and user variables into the home
 // template
 //
-app.get('/', (req, res) => {
-    const posts = getPosts();
-    const user = getCurrentUser(req) || {};
+app.get('/', async (req, res) => {
+    const posts = await getPosts();
+    const user = await getCurrentUser(req) || {};
     res.render('home', { posts, user });
 });
 
@@ -143,38 +143,40 @@ app.get('/error', (req, res) => {
 // Additional routes that you must implement
 
 
-app.post('/posts', isAuthenticated, (req, res) => {
-    addPost(req.body.title, req.body.content, getCurrentUser(req));
+app.post('/posts', isAuthenticated, async (req, res) => {
+    console.log("Adding post:");
+    await addPost(req.body.title, req.body.content, await getCurrentUser(req));
     showDatabaseContents();
     res.redirect('back');
     // TODO: Add a new post and redirect to home
 });
-app.post('/like/:id', isAuthenticated, (req, res) => {
-    updatePostLikes(req, res);
+app.post('/like/:id', isAuthenticated, async (req, res) => {
+    await updatePostLikes(req, res);
 });
 
-app.get('/profile', isAuthenticated, (req, res) => {
-    renderProfile(req, res);
+app.get('/profile', isAuthenticated, async (req, res) => {
+    await renderProfile(req, res);
     // TODO: Render profile page
 });
 app.get('/avatar/:username', (req, res) => {
     handleAvatar(req, res);
     // TODO: Serve the avatar image for the user
 });
-app.post('/register', (req, res) => {
-    registerUser(req, res);
+app.post('/register', async (req, res) => {
+    await registerUser(req, res);
     // TODO: Register a new user
 });
-app.post('/login', (req, res) => {
-    loginUser(req, res);
+
+app.post('/login', async (req, res) => {
+    await loginUser(req, res);
     // TODO: Login a user
 });
 app.get('/logout', isAuthenticated, (req, res) => {
     logoutUser(req, res);
     // TODO: Logout the user
 });
-app.post('/delete/:id', isAuthenticated, (req, res) => {
-    deletePost(req, res);
+app.post('/delete/:id', isAuthenticated, async (req, res) => {
+    await deletePost(req, res);
     res.redirect('back');
 
     // TODO: Delete a post if the current user is the owner
@@ -195,27 +197,25 @@ startConnection().then(() => {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 // Example data for posts and users
-let posts = [
-    { id: 1, title: 'My Recent Musings', content: 'This Daoist launched a technique at himself and became hurt, does that mean this Daoist is mighty or feeble?', username: 'Daoist Andy', timestamp: '2024-01-01 10:00', likes: 0 },
-    { id: 2, title: 'The Decreasing Quality of Daoists Nowadays...', content: 'Upon reading Daoist Andy`s post, this Senior didn`t know whether to laugh or cry. Daoist Andy has eyes but cannot see Mount Tai...', username: 'Senior Wilson', timestamp: '2024-01-02 12:00', likes: 40 },
-];
-let users = [
-    { id: 1, username: 'Daoist Andy', avatar_url: undefined, memberSince: '2024-01-01 08:00' },
-    { id: 2, username: 'Senior Wilson', avatar_url: undefined, memberSince: '2024-01-02 09:00' },
-];
+
 let avatars = [];
 
 let colors = ["#00A36C", "#87CEEB", "#0F52BA", "#DC143C", "#464344"];
 
-function generateTimeStamp() {
-    const currentTime = new Date();
-    const year = twoDigits(currentTime.getFullYear());
-    const month = twoDigits(currentTime.getMonth());
-    const day = twoDigits(currentTime.getDate());
-    const hours = twoDigits(currentTime.getHours());
-    const minutes = twoDigits(currentTime.getMinutes());
-    const timestamp = `${year}-${month}-${day} ${hours}:${minutes}`;
-    return timestamp;
+async function generateTimeStamp() {
+    try {
+        const currentTime = new Date();
+        const year = twoDigits(currentTime.getFullYear());
+        const month = twoDigits(currentTime.getMonth());
+        const day = twoDigits(currentTime.getDate());
+        const hours = twoDigits(currentTime.getHours());
+        const minutes = twoDigits(currentTime.getMinutes());
+        const timestamp = `${year}-${month}-${day} ${hours}:${minutes}`;
+        return timestamp;
+    } catch(error) {
+        console.log("Could not generate TimeStamp", error);
+    }
+    
 }
 
 function twoDigits(number) {
@@ -226,26 +226,52 @@ function twoDigits(number) {
 }
 
 // Function to find a user by username
-function findUserByUsername(username) {
-    const userFound = users.find(userFound => userFound.username === username);
-    return userFound;
-    // TODO: Return user object if found, otherwise return undefined
-}
+// Define an async function to find a user by username
+async function findUserByUsername(username) {
+    const query = 'SELECT * FROM users WHERE username = ?';
+  
+    try {
+      const row = await db.get(query, [username]);
+      if (row) {
+        console.log(row);
+        return row;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error('Error executing query:', error.message);
+      throw new Error('Internal Server Error');
+    }
+  }
+  
+  
 
 // Function to find a user by user ID
-function findUserById(userId) {
-    const userFound = users.find(userFound => userFound.id === userId);
-    return userFound;
-    // TODO: Return user object if found, otherwise return undefined
-}
+async function findUserById(userId) {
+    const query = 'SELECT * FROM users WHERE id = ?';
+  
+    try {
+      const row = await db.get(query, [userId]);
+  
+      if (row) {
+        console.log(row);
+        return row;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error('Error executing query:', error.message);
+      throw new Error('Internal Server Error');
+    }
+  }
 
 // Function to add a new user
 async function addUser(username) {
     try {
-        let hashedGoogleId = 0;
+        let hashedGoogleId = '';
         let avatar_url = `/avatar/${username}`;
-        let memberSince = generateTimeStamp();
-        return db.run(
+        let memberSince = await generateTimeStamp();
+        return await db.run(
             'INSERT INTO users (username, hashedGoogleId, avatar_url, memberSince) VALUES (?, ?, ?, ?)',
             [username, hashedGoogleId, avatar_url, memberSince]
         );
@@ -257,7 +283,6 @@ async function addUser(username) {
 
 // Middleware to check if user is authenticated
 function isAuthenticated(req, res, next) {
-    console.log(req.session.userId);
     if (req.session.userId) {
         next();
     } else {
@@ -266,35 +291,49 @@ function isAuthenticated(req, res, next) {
 }
 
 // Function to register a user
-function registerUser(req, res) {
-    const { username } = req.body;
-    userFound = findUserByUsername(username);
-    if (userFound) {
-        res.redirect('/register?error=Username%20Already%20Exists');
+async function registerUser(req, res) {
+    try {
+        const { username } = req.body;
+        console.log("registering user");
+        let user = await findUserByUsername(username);
+        if (user) {
+            console.log(user);
+            res.redirect('/register?error=Username%20Already%20Exists');
+        }
+        else {
+            console.log("User not found");
+            let newUser = await addUser(username);
+            showDatabaseContents();
+            req.session.userId = user.id;
+            console.log("Current User ID: ", req.session.userId);
+            req.session.loggedIn = true;
+            res.redirect('/');
+        }
+    } catch(error) {
+        console.log("Error:", error);
     }
-    else {
-        newUser = addUser(username);
-        showDatabaseContents();
-        req.session.userId = newUser.id;
-        req.session.loggedIn = true;
-        res.redirect('/');
-    }
-    
     // TODO: Register a new user and redirect appropriately
 }
 
 // Function to login a user
-function loginUser(req, res) {
-    const { username } = req.body;
-    userFound = findUserByUsername(username);
-    if (!userFound) {
-        res.redirect('/login?error=Username%20Doesn`t%20Exist');
+async function loginUser(req, res) {
+    try {
+        const { username } = req.body;
+        let user = await findUserByUsername(username);
+        if (!user) {
+            res.redirect('/login?error=Username%20Doesn`t%20Exist');
+        }
+        else {
+            console.log(user);
+            req.session.userId = user.id;
+            console.log("Current User ID: ", req.session.userId);
+            req.session.loggedIn = true;
+            res.redirect('/');
+        }
+    } catch(error) {
+        console.log("Failed to login user:", error);
     }
-    else {
-        req.session.userId = userFound.id;
-        req.session.loggedIn = true;
-        res.redirect('/');
-    }
+    
     
     // TODO: Login a user and redirect appropriately
 }
@@ -309,21 +348,43 @@ function logoutUser(req, res) {
 }
 
 // Function to render the profile page
-function renderProfile(req, res) {
-    let allPosts = getPosts();
-    let currentUser = getCurrentUser(req);
-    currentUser.posts = [];
-    currentUser.posts = posts.filter(post => post.username === currentUser.username);
-    res.render('profile', {user : currentUser});
+async function renderProfile(req, res) {
+    try {
+        let allPosts = await getPosts();
+        let currentUser = await getCurrentUser(req);
+        currentUser.posts = [];
+        console.log(currentUser.username, "'s profile");
+        let query = "SELECT * FROM posts WHERE username = ?"
+        currentUser.posts = await db.all(query, [currentUser.username]);
+        res.render('profile', {user : currentUser});
+    } catch(error) {
+        console.log("Failed to render profile: ", error);
+    }
+    
     // TODO: Fetch user posts and render the profile page
 }
 
 // Function to update post likes
-function updatePostLikes(req, res) {
-    const postId = req.params.id;
-    const post = posts.find(post => post.id === parseInt(postId));
-    post.likes++;
-    res.json({ likes: post.likes });
+async function updatePostLikes(req, res) {
+    try {
+        const postId = req.params.id;
+        console.log(postId);
+        
+        let query = "SELECT * FROM posts WHERE id = ?";
+        const post = await db.get(query, [postId]);
+        
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+        
+        post.likes++;
+        await db.run('UPDATE posts SET likes = ? WHERE id = ?', [post.likes, postId]);
+        
+        res.json({ likes: post.likes });
+    } catch(error) {
+        console.log("Failed to update likes:", error);
+    }
+    
     // TODO: Increment post likes if conditions are met
 }
 
@@ -338,23 +399,32 @@ function handleAvatar(req, res) {
 }
 
 // Function to get the current user from session
-function getCurrentUser(req) {
-    return users[req.session.userId - 1];
+async function getCurrentUser(req) {
+    try {
+        return await findUserById(req.session.userId);
+    } catch(error) {
+        console.log("Error getting current user:", error);
+    }
     // TODO: Return the user object if the session user ID matches
 }
 
 // Function to get all posts, sorted by latest first
-function getPosts() {
-    return posts.slice().reverse();
+async function getPosts() {
+    try {
+        return await db.all('SELECT * FROM posts');
+    } catch(error) {
+        console.log("Failed to get posts:", error);
+    }
+    
 }
 
 // Function to add a new post
 async function addPost(title, content, user) {
     try {
-        let timestamp = generateTimeStamp();
+        let timestamp = await generateTimeStamp();
         let username = user.username;
         let likes = 0;
-        return db.run(
+        return await db.run(
             'INSERT INTO posts (title, content, username, timestamp, likes) VALUES (?, ?, ?, ?, ?)',
             [title, content, username, timestamp, likes]
         );
@@ -364,10 +434,15 @@ async function addPost(title, content, user) {
     // TODO: Create a new post object and add to posts array
 }
 
-function deletePost(req, res) {
-    const postId = parseInt(req.params.id);
-    const index = posts.findIndex(post => post.id === postId);
-    posts.splice(index, 1);
+async function deletePost(req, res) {
+    try {
+        const postId = parseInt(req.params.id);
+        let query = "DELETE FROM posts WHERE id = ?"
+        await db.all(query, postId);
+    } catch(error) {
+        console.log("Failed to delete post:", error);
+    }
+    
 
 }
 
@@ -430,5 +505,4 @@ async function showDatabaseContents() {
         console.log('Posts table does not exist.');
     }
 
-    await db.close();
 }

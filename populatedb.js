@@ -9,11 +9,13 @@ const dbFileName = 'databaseFile.db';
 async function initializeDB() {
     const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
 
+    //ADD UNIQUE BACK TO hashedGoogleID AFTER
+
     await db.exec(`
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL UNIQUE,
-            hashedGoogleId TEXT NOT NULL UNIQUE,
+            hashedGoogleId TEXT NOT NULL,
             avatar_url TEXT,
             memberSince DATETIME NOT NULL
         );
