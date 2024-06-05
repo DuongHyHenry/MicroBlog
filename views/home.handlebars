@@ -31,15 +31,16 @@
     {{/if}}
 
     <section class="posts-list">
-        <!-- Sorting dropdown menu -->
+
+        <!-- posts -->
+        <h1>{{{postNeoType}}}s</h1>
+
+        <!-- sorting dropdown menu -->
         <div class="sorting-buttons">
             <input type="button" onclick="location.href='http://localhost:3000/newest';" value="Newest" />
             <input type="button" onclick="location.href='http://localhost:3000/oldest';" value="Oldest" />
             <input type="button" onclick="location.href='http://localhost:3000/likes';" value="Likes" />
         </div>
-
-        <!-- posts -->
-        <h1>{{{postNeoType}}}s</h1>
 
         {{#if posts.length}}
         <ul>
@@ -51,6 +52,7 @@
         </ul>
         {{else}}
             <!-- no posts, oh no, what now? -->
+            There are no posts yet!
         {{/if}}
     </section>
 </section>

@@ -16,7 +16,7 @@
     <header>
         <div class="container">
             <div class="logo">
-                <img src="images/logo.png" class="header-logo">
+                <img src="images/logo.png" alt="logo" class="header-logo">
                 <h1 class="app-name">{{{appName}}}</h1>
             </div>
             <nav class="nav-items">
@@ -25,19 +25,32 @@
                     {{#if loggedIn}}
                         <li><a href="/">Home</a></li>
                         <li><a href="/profile">Profile</a></li>
+                        {{#if user.sect}}
+                            <li><a href="/sects/{{user.sect}}">{{user.sect}}</a></li>
+                        {{else}}
+                            <li><a href="/sects">Join a Sect</a></li>
+                        {{/if}}
                         <li><a href="/logout">Logout <span>{{user.username}}</span></a></li>
                         <div class="user-info">
                             <!-- conditional rendering based on variables -->
-                            <img src="{{#if user.avatar_url}}
-                                            {{user.avatar_url}}
+                            <img src="{{#if user.avatar_img}}
+                                            {{user.avatar_img}}
                                         {{else}}
                                             /avatar/{{user.username}}
                                         {{/if}}" 
                                         alt="User Avatar" 
                                         class="header-avatar">
+                            <img src="{{#if user.avatar_frame}}
+                                            {{user.avatar_frame}}
+                                        {{else}}
+                                            /frame/{{user.username}}
+                                        {{/if}}" 
+                                        alt="User Frame" 
+                                        class="header-frame">
                         </div>
                     {{else}}
                         <li><a href="/">Home</a></li>
+                        <li><a href="/background">Background</a></li>
                         <li><a href="/auth/google">Login/Register</a></li>
                     {{/if}}
                 </ul>

@@ -58,7 +58,8 @@ footer {
 }
 
 .nav-items ul li {
-    margin-left: 10px; /* Add some spacing between list items */
+    margin-left: 10px;
+    white-space: nowrap;
 }
 
 .login-register {
@@ -158,6 +159,92 @@ footer {
     text-decoration: none;
 }
 
+.background {
+    font-family: 'Kaushan Script';
+    font-size: 20px;
+    text-align: center;
+}
+
+.background h1 {
+    font-family: 'Kaushan Script';
+    font-size: 20px;
+    text-align: center;
+    font-size: 40px;
+}
+
+.profile-pictures {
+    display: flex;
+    gap: 20px;
+    padding-left: 5%;
+    padding-top: 5%;
+    padding-bottom: 5%;
+    padding-right: 5%;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.profile-pictures img {
+    height: 22.5%;
+    width: 22.5%;
+}
+
+.post-avatar-container {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+
+.post-avatar, .post-frame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100px; 
+    height: 100px;
+    object-fit: cover;
+}
+
+.post-frame {
+    z-index: 1;
+}
+
+.profile-avatar {
+    position: relative;
+    width: 100px; /* Adjust width and height as needed */
+    height: 100px; /* Adjust width and height as needed */
+}
+
+.profile-img, .profile-frame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%; /* Ensures the image fills the container */
+    height: 100%; /* Ensures the image fills the container */
+    object-fit: cover; /* Preserve aspect ratio */
+}
+
+.profile-frame {
+    z-index: 1; /* Ensure the frame is above the image */
+}
+
+.user-info {
+    position: relative;
+    width: 100px; /* Adjust width and height as needed */
+    height: 100px; /* Adjust width and height as needed */
+}
+
+.header-frame, .header-avatar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%; /* Ensures the image fills the container */
+    height: 100%; /* Ensures the image fills the container */
+    object-fit: cover; /* Preserve aspect ratio */
+}
+
+.profile-frame {
+    z-index: 1; /* Ensure the frame is above the image */
+}
+
 @media only screen and (max-width: 767px) {
 
     header {
@@ -218,6 +305,62 @@ footer {
     .header-avatar {
         border-radius: 15px;
         height: 50px;
+    }
+
+    .background {
+        font-family: 'Kaushan Script';
+        font-size: 20px;
+        text-align: center;
+    }
+
+    .background h1 {
+        font-family: 'Kaushan Script';
+        font-size: 20px;
+        text-align: center;
+        font-size: 40px;
+    }
+
+    .profile-pictures {
+        display: flex;
+        gap: 20px;
+    }
+
+    .profile-pictures img {
+        height: 20%;
+        width: 20%;
+    }
+
+    .post {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        border: solid #6e787a 2px;
+        border-radius: 15px;
+        background-color: #9cacaf;
+    }
+    
+    .post-status-bar {
+        display: flex;
+        gap: 20px;
+    }
+
+    .user-info {
+        position: relative;
+        width: 70px; /* Adjust width and height as needed */
+        height: 70px; /* Adjust width and height as needed */
+    }
+    
+    .header-frame, .header-avatar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%; /* Ensures the image fills the container */
+        height: 100%; /* Ensures the image fills the container */
+        object-fit: cover; /* Preserve aspect ratio */
+    }
+    
+    .profile-frame {
+        z-index: 1; /* Ensure the frame is above the image */
     }
 
 }

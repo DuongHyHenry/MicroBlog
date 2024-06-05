@@ -1,0 +1,34 @@
+{{! Use the main layout }}
+{{!< main }}
+
+<section class="login-register">
+    <section class = "login-area">
+        <h2>Choose a Sect to Join:</h2>
+        <!-- errors will appear here -->
+        {{#if joinSectError}}
+            <p style="color: red;">{{joinSectError}}</p>
+        {{/if}}
+        <form action="/joinSect" method="POST">
+            <!-- the login form goes here -->     
+            <input name="sect" placeholder="Sect Name"/>
+            <button type="submit">Join Sect</button>
+        </form>
+    </section>
+
+    <!-- say --OR-- ... with style -->
+
+    --OR--
+
+    <section class = "register-area">
+        <h2>Found your own Sect</h2>
+        <!-- errors will appear here -->
+        {{#if foundSectError}}
+            <p style="color: red;">{{foundSectError}}</p>
+        {{/if}}
+        <form action="/foundSect" method="POST">
+            <!-- the registration form goes here -->
+            <input name="sect" placeholder="Sect Name"/>
+            <button type="submit">Found Sect</button>
+        </form>
+    </section>
+</section>

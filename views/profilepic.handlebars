@@ -1,0 +1,47 @@
+{{! Use the main layout }}
+{{!< main }}
+
+<section class="background">
+    <h1>Pick a profile picture:</h1>
+</section>
+
+<div class="profile-pictures">
+    <img src='/images/profilePictures/pic1.jpeg' onclick="sendImagePath('/images/profilePictures/pic1.jpeg')" alt='pic1'>
+    <img src='/images/profilePictures/pic2.jpeg' onclick="sendImagePath('/images/profilePictures/pic2.jpeg')" alt='pic2'>
+    <img src='/images/profilePictures/pic3.jpeg' onclick="sendImagePath('/images/profilePictures/pic3.jpeg')" alt='pic3'>
+    <img src='/images/profilePictures/pic4.jpeg' onclick="sendImagePath('/images/profilePictures/pic4.jpeg')" alt='pic4'>
+    <img src='/images/profilePictures/pic5.jpeg' onclick="sendImagePath('/images/profilePictures/pic5.jpeg')" alt='pic5'>
+    <img src='/images/profilePictures/pic6.jpeg' onclick="sendImagePath('/images/profilePictures/pic6.jpeg')" alt='pic6'>
+    <img src='/images/profilePictures/pic7.jpeg' onclick="sendImagePath('/images/profilePictures/pic7.jpeg')" alt='pic7'>
+    <img src='/images/profilePictures/pic8.jpeg' onclick="sendImagePath('/images/profilePictures/pic8.jpeg')" alt='pic8'>
+    <img src='/images/profilePictures/pic9.jpeg' onclick="sendImagePath('/images/profilePictures/pic9.jpeg')" alt='pic9'>
+    <img src='/images/profilePictures/pic10.jpeg' onclick="sendImagePath('/images/profilePictures/pic10.jpeg')" alt='pic10'>
+    <img src='/images/profilePictures/pic11.jpeg' onclick="sendImagePath('/images/profilePictures/pic11.jpeg')" alt='pic11'>
+    <img src='/images/profilePictures/pic12.jpeg' onclick="sendImagePath('/images/profilePictures/pic12.jpeg')" alt='pic12'>
+    <img src='/images/profilePictures/pic13.jpeg' onclick="sendImagePath('/images/profilePictures/pic13.jpeg')" alt='pic13'>
+    <img src='/images/profilePictures/pic14.jpeg' onclick="sendImagePath('/images/profilePictures/pic14.jpeg')" alt='pic14'>
+    <img src='/images/profilePictures/pic15.jpeg' onclick="sendImagePath('/images/profilePictures/pic15.jpeg')" alt='pic15'>
+    <img src='/images/profilePictures/pic16.jpeg' onclick="sendImagePath('/images/profilePictures/pic16.jpeg')" alt='pic16'>
+</div>
+
+<script>
+    function sendImagePath(imagePath) {
+        fetch('/choosePic', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ path: imagePath }),
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.href = '/chooseFrame'; // Redirect to profile page or another appropriate page
+            } else {
+                console.error('Failed to set profile picture');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+</script>

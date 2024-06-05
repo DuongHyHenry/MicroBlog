@@ -1,0 +1,38 @@
+{{! Use the main layout }}
+{{!< main }}
+
+<section class="background">
+    <h1>Pick a profile picture:</h1>
+</section>
+
+<div class="profile-pictures">
+    <img src='/images/profilePictures/frame2.png' onclick="sendImagePath('/images/profilePictures/frame2.png')" alt='frame2'>
+    <img src='/images/profilePictures/frame3.png' onclick="sendImagePath('/images/profilePictures/frame3.png')" alt='frame3'>
+    <img src='/images/profilePictures/frame4.png' onclick="sendImagePath('/images/profilePictures/frame4.png')" alt='frame4'>
+    <img src='/images/profilePictures/frame5.png' onclick="sendImagePath('/images/profilePictures/frame5.png')" alt='frame5'>
+    <img src='/images/profilePictures/frame6.png' onclick="sendImagePath('/images/profilePictures/frame6.png')" alt='frame6'>
+    <img src='/images/profilePictures/frame7.png' onclick="sendImagePath('/images/profilePictures/frame7.png')" alt='frame7'>
+    <img src='/images/profilePictures/frame8.png' onclick="sendImagePath('/images/profilePictures/frame8.png')" alt='frame8'>
+</div>
+
+<script>
+    function sendImagePath(imagePath) {
+        fetch('/chooseFrame', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ path: imagePath }),
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.href = '/profile'; // Redirect to profile page or another appropriate page
+            } else {
+                console.error('Failed to set profile picture');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+</script>

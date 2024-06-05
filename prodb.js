@@ -45,6 +45,22 @@ async function showDatabaseContents() {
         console.log('Posts table does not exist.');
     }
 
+    const sectPostsTableExists = await db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='users';`);
+    if (sectPostsTableExists) {
+        console.log('Sect posts table exists.');
+        const sectPosts = await db.all('SELECT * FROM sectPosts');
+        if (sectPosts.length > 0) {
+            console.log('Sect Posts:');
+            sectPosts.forEach(sectPost => {
+                console.log(sectPost);
+            });
+        } else {
+            console.log('No sect posts found.');
+        }
+    } else {
+        console.log('Sect posts table does not exist.');
+    }
+
     await db.close();
 }
 

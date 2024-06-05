@@ -1,8 +1,9 @@
 {{! Partial for a single post }}
 <div class="post" data-id="{{id}}" data-username="{{username}}">
-    <div class="post-avatar">
+    <div class="post-avatar-container">
         <!-- the user's avatar -->
-        <img src="/avatar/{{username}}" id="post-avatar" alt="Avatar of {{username}}">
+        <img src="/avatar/{{username}}" class="post-avatar" alt="Avatar of {{username}}">
+        <img src="/frame/{{username}}" class="post-frame" alt="Avatar of {{username}}">
     </div>
     <div class="post-content preserve-newlines">
         <!-- the post -->

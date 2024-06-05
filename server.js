@@ -6,6 +6,7 @@ const sqlite3 = require('sqlite3');
 const sqlite = require('sqlite');
 const passport = require('passport');
 const bcrypt = require('bcrypt');
+const path = require('path');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 require('dotenv').config({ path: 'OAuth.env' });
 
@@ -20,6 +21,8 @@ let db;
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // SQL Database Connection and Google OAuth
@@ -141,35 +144,72 @@ app.use(express.json());                            // Parse JSON bodies (as sen
 //
 app.get('/', async (req, res) => {
     let posts;
+    const user = await getCurrentUser(req) || {};
     if (req.query.sort === 'likes') {
-        posts = await getPostsLikes();
+        posts = await getPostsLikes(null);
 
     } else if (req.query.sort === 'oldest') {
-        posts = await getPostsOldest();
+        posts = await getPostsOldest(null);
 
     } else {
-        posts = await getPostsNewest();
+        posts = await getPostsNewest(null);
     }
-    const user = await getCurrentUser(req) || {};
     res.render('home', { posts, user });
+});
+app.get('/sects/:sect', async (req, res) => {
+    let posts;
+    const user = await getCurrentUser(req) || {};
+    if (req.query.sort === 'likes') {
+        posts = await getPostsLikes(user.sect);
+
+    } else if (req.query.sort === 'oldest') {
+        posts = await getPostsOldest(user.sect);
+
+    } else {
+        posts = await getPostsNewest(user.sect);
+    }
+    res.render('sect', { posts, user });
+})
+
+app.get('/background', async (req, res) => {
+    const user = await getCurrentUser(req);
+    res.render('background', { user });
 });
 
 app.get('/oldest', async (req, res) => {
-    let posts = await getPostsOldest();;
+    let posts = await getPostsOldest(null);
     const user = await getCurrentUser(req) || {};
     res.render('home', { posts, user });
 });
 
 app.get('/newest', async (req, res) => {
-    let posts = await getPostsNewest();;
+    let posts = await getPostsNewest(null);
     const user = await getCurrentUser(req) || {};
     res.render('home', { posts, user });
 });
 
 app.get('/likes', async (req, res) => {
-    let posts = await getPostsLikes();;
+    let posts = await getPostsLikes(null);
     const user = await getCurrentUser(req) || {};
     res.render('home', { posts, user });
+});
+
+app.get('/sects/:sect/oldest', async (req, res) => {
+    const user = await getCurrentUser(req) || {};
+    let posts = await getPostsOldest(user.sect);
+    res.render('sect', { posts, user });
+});
+
+app.get('/sects/:sect/newest', async (req, res) => {
+    const user = await getCurrentUser(req) || {};
+    let posts = await getPostsNewest(user.sect);
+    res.render('sect', { posts, user });
+});
+
+app.get('/sects/:sect/likes', async (req, res) => {
+    const user = await getCurrentUser(req) || {};
+    let posts = await getPostsLikes(user.sect);
+    res.render('sect', { posts, user });
 });
 
 // Register GET route is used for error response from registration
@@ -182,6 +222,18 @@ app.get('/register', (req, res) => {
 //
 app.get('/login', (req, res) => {
     res.render('loginRegister', { loginError: req.query.error });
+});
+
+app.get('/joinSect', isAuthenticated, (req, res) => {
+    res.render('sectSelect', { joinSectError: req.query.error });
+});
+
+app.get('/foundSect', isAuthenticated, (req, res) => {
+    res.render('sectSelect', { foundSectError: req.query.error });
+});
+
+app.get('/sects', (req, res) => {
+    res.render('sectSelect');
 });
 
 // Error route: render error page
@@ -200,16 +252,43 @@ app.post('/posts', isAuthenticated, async (req, res) => {
     res.redirect('back');
     // TODO: Add a new post and redirect to home
 });
+app.post('/sects/:sect/posts', isAuthenticated, async (req, res) => {
+    await addSectPost(req.body.title, req.body.content, await getCurrentUser(req));
+    res.redirect('/sects/:sect');
+});
 app.post('/like/:id', isAuthenticated, async (req, res) => {
     await updatePostLikes(req, res);
+});
+app.post('/like/sects/:id', isAuthenticated, async (req, res) => {
+    await updateSectPostLikes(req, res);
 });
 
 app.get('/profile', isAuthenticated, async (req, res) => {
     await renderProfile(req, res);
     // TODO: Render profile page
 });
-app.get('/avatar/:username', (req, res) => {
-    handleAvatar(req, res);
+
+app.get('/choosePic', isAuthenticated, async (req, res) => {
+    res.render('profilepic');
+    // TODO: Render profile page
+});
+
+app.get('/chooseFrame', isAuthenticated, async (req, res) => {
+    res.render('frames');
+    // TODO: Render profile page
+});
+
+app.get('/avatar/:username', async (req, res) => {
+    const { username } = req.params;
+    const user = await findUserByUsername(username);
+    res.sendFile(`${__dirname}/public/${user.avatar_img}`);
+    // TODO: Serve the avatar image for the user
+});
+
+app.get('/frame/:username', async (req, res) => {
+    const { username } = req.params;
+    const user = await findUserByUsername(username);
+    res.sendFile(`${__dirname}/public/${user.avatar_frame}`);
     // TODO: Serve the avatar image for the user
 });
 app.post('/register', async (req, res) => {
@@ -221,6 +300,43 @@ app.post('/login', async (req, res) => {
     await loginUser(req, res);
     // TODO: Login a user
 });
+
+app.post('/joinSect', isAuthenticated, async (req, res) => {
+    await joinSect(req, res);
+});
+
+app.post('/foundSect', isAuthenticated, async (req, res) => {
+    await foundSect(req, res);
+});
+
+app.post('/choosePic', async (req, res) => {
+    try {
+        const { path } = req.body;
+        let user = await getCurrentUser(req);
+        console.log(user);
+        query = 'UPDATE users SET avatar_img = ? WHERE username = ?'
+        console.log(path);
+        await db.run(query, [path, user.username]);
+        res.redirect('/chooseFrame');
+    } catch(error) {
+        console.log('Couldn`t choose picture:', error);
+    }
+});
+
+app.post('/chooseFrame', async (req, res) => {
+    try {
+        const { path } = req.body;
+        let user = await getCurrentUser(req);
+        console.log(user);
+        query = 'UPDATE users SET avatar_frame = ? WHERE username = ?'
+        console.log(path);
+        await db.run(query, [path, user.username]);
+        res.redirect('/profile');
+    } catch(error) {
+        console.log('Couldn`t choose frame:', error);
+    }
+});
+
 app.get('/logout', isAuthenticated, (req, res) => {
     logoutUser(req, res);
     // TODO: Logout the user
@@ -233,6 +349,10 @@ app.post('/delete/:id', isAuthenticated, async (req, res) => {
     res.redirect('back');
 
     // TODO: Delete a post if the current user is the owner
+});
+app.post('/delete/sects/:id', isAuthenticated, async (req, res) => {
+    await deleteSectPost(req, res);
+    res.redirect('back');
 });
 
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile']}))
@@ -283,13 +403,12 @@ app.post('/registerUsername', async (req, res) => {
             let hashedGoogleId = await bcrypt.hash(req.session.userId, 10);
             console.log("Newly Hashed Id:", hashedGoogleId);
             console.log("Google Id:", req.session.userId);
-            let avatar_url = `/avatar/${username}`;
             let memberSince = await generateTimeStamp();
             await db.run(
-                'INSERT INTO users (username, hashedGoogleId, avatar_url, memberSince) VALUES (?, ?, ?, ?)',
-                [username, hashedGoogleId, avatar_url, memberSince]
+                'INSERT INTO users (username, hashedGoogleId, memberSince, sect) VALUES (?, ?, ?, ?)',
+                [username, hashedGoogleId, memberSince, null]
             );
-            res.redirect('/');
+            res.redirect('/choosePic');
         }
     } catch(error) {
         console.log("Could register username:", error);
@@ -389,7 +508,6 @@ async function findUserByHashedId(userId) {
             const isMatch = await bcrypt.compare(userIdString, row.hashedGoogleId);
             
             if (isMatch) {
-                console.log("Hashed Id found:", row);
                 return row;
             }
         }
@@ -405,11 +523,12 @@ async function findUserByHashedId(userId) {
 async function addUser(username) {
     try {
         let hashedGoogleId = '';
-        let avatar_url = `/avatar/${username}`;
         let memberSince = await generateTimeStamp();
+        let sect = null;
+        console.log(sect);
         return await db.run(
-            'INSERT INTO users (username, hashedGoogleId, avatar_url, memberSince) VALUES (?, ?, ?, ?)',
-            [username, hashedGoogleId, avatar_url, memberSince]
+            'INSERT INTO users (username, hashedGoogleId, memberSince, sect) VALUES (?, ?, ?, ?)',
+            [username, hashedGoogleId, memberSince, sect]
         );
     } catch(error) {
         console.log("Error adding user:", error);
@@ -422,7 +541,7 @@ function isAuthenticated(req, res, next) {
     if (req.session.userId) {
         next();
     } else {
-        res.redirect('/login');
+        res.redirect('/');
     }
 }
 
@@ -474,6 +593,51 @@ async function loginUser(req, res) {
     // TODO: Login a user and redirect appropriately
 }
 
+async function joinSect(req, res) {
+    try {
+        const { sect } = req.body;
+        let user = await getCurrentUser(req);
+        let query = 'SELECT * FROM sectPosts WHERE sect = ?';
+        let sectExists = await db.get(query, [sect]);
+        if (sectExists) {
+            query = 'UPDATE users SET sect = ? WHERE username = ?'
+            await db.run(query, [sect, user.username]);
+            res.redirect('/');
+        }
+        else {
+            res.redirect('/joinSect?error=Sect%20Doesn`t%20Exist');
+        }
+    } catch(error) {
+        console.log("Failed to join sect:", error);
+    }
+    
+    
+    // TODO: Login a user and redirect appropriately
+}
+
+async function foundSect(req, res) {
+    try {
+        const { sect } = req.body;
+        console.log(sect);
+        let user = await getCurrentUser(req);
+        let query = 'SELECT * FROM sectPosts WHERE sect = ?';
+        let sectExists = await db.get(query, [sect]);
+        if (!sectExists) {
+            query = 'UPDATE users SET sect = ? WHERE username = ?'
+            await db.run(query, [sect, user.username]);
+            res.redirect('/');
+        }
+        else {
+            res.redirect('/foundSect?error=Sect%20Already%20Exists');
+        }
+    } catch(error) {
+        console.log("Failed to join sect:", error);
+    }
+    
+    
+    // TODO: Login a user and redirect appropriately
+}
+
 // Function to logout a user
 function logoutUser(req, res) {
     req.session.destroy;
@@ -486,7 +650,7 @@ function logoutUser(req, res) {
 // Function to render the profile page
 async function renderProfile(req, res) {
     try {
-        let allPosts = await getPosts();
+        let allPosts = await getPostsOldest();
         console.log(req.session.userId);
         let currentUser = await getCurrentUser(req);
 
@@ -525,13 +689,40 @@ async function updatePostLikes(req, res) {
     // TODO: Increment post likes if conditions are met
 }
 
+async function updateSectPostLikes(req, res) {
+    try {
+        const postId = req.params.id;
+        console.log(postId);
+        
+        let query = "SELECT * FROM sectPosts WHERE id = ?";
+        const post = await db.get(query, [postId]);
+        
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+        
+        post.likes++;
+        await db.run('UPDATE sectPosts SET likes = ? WHERE id = ?', [post.likes, postId]);
+        
+        res.json({ likes: post.likes });
+    } catch(error) {
+        console.log("Failed to update likes:", error);
+    }
+    
+    // TODO: Increment post likes if conditions are met
+}
+
 // Function to handle avatar generation and serving
-function handleAvatar(req, res) {
-    letter = req.params.username[0];
-    username = req.params.username;
-    const dataBuffer = generateAvatar(letter);
-    res.set('Content-Type', 'image/png');
-    res.send(dataBuffer);
+async function handleAvatar(req, res) {
+    try {
+        let { path } = req.body;
+        let user = getCurrentUser(req);
+        query = 'UPDATE users SET avatar_img = ? WHERE username = ?'
+        await db.run(query, [path, user.username]);
+    } catch(error) {
+        console.log("Couldn't handle avatar: ", error);
+    }
+    
     // TODO: Generate and serve the user's avatar image
 }
 
@@ -550,25 +741,44 @@ async function getCurrentUser(req) {
 }
 
 // Function to get all posts, sorted by latest first
-async function getPostsNewest() {
+async function getPostsNewest(sect) {
     try {
-        return await db.all('SELECT * FROM posts ORDER BY timestamp DESC');
+        if (sect) {
+            let query = 'SELECT * FROM sectPosts WHERE sect = ? ORDER BY timestamp DESC';
+            console.log(sect)
+            return await db.all(query, [sect]);
+        }
+        else {
+            return await db.all('SELECT * FROM posts ORDER BY timestamp DESC');
+        }
     } catch(error) {
         console.log("Failed to get posts:", error);
     }
 }
 
-async function getPostsOldest() {
+async function getPostsOldest(sect) {
     try {
-        return await db.all('SELECT * FROM posts ORDER BY timestamp ASC');
+        if (sect) {
+            let query = 'SELECT * FROM sectPosts WHERE sect = ? ORDER BY timestamp ASC';
+            return await db.all(query, sect);
+        }
+        else {
+            return await db.all('SELECT * FROM posts ORDER BY timestamp ASC');
+        }
     } catch(error) {
         console.log("Failed to get posts:", error);
     }
 }
 
-async function getPostsLikes() {
+async function getPostsLikes(sect) {
     try {
-        return await db.all('SELECT * FROM posts ORDER BY likes DESC');
+        if (sect) {
+            let query = 'SELECT * FROM sectPosts WHERE sect = ? ORDER BY likes DESC';
+            return await db.all(query, [sect]);
+        }
+        else {
+            return await db.all('SELECT * FROM posts ORDER BY likes DESC');
+        }
     } catch(error) {
         console.log("Failed to get posts:", error);
     }
@@ -590,6 +800,21 @@ async function addPost(title, content, user) {
     // TODO: Create a new post object and add to posts array
 }
 
+async function addSectPost(title, content, user) {
+    try {
+        let timestamp = await generateTimeStamp();
+        let username = user.username;
+        let sect = user.sect;
+        let likes = 0;
+        return await db.run(
+            'INSERT INTO sectPosts (title, content, username, timestamp, likes, sect) VALUES (?, ?, ?, ?, ?, ?)',
+            [title, content, username, timestamp, likes, sect]
+        );
+    } catch(error) {
+        console.log("Error adding post:", error);
+    }
+}
+
 async function deletePost(req, res) {
     try {
         const postId = parseInt(req.params.id);
@@ -600,27 +825,33 @@ async function deletePost(req, res) {
     }
 }
 
+async function deleteSectPost(req, res) {
+    try {
+        const postId = parseInt(req.params.id);
+        let query = "DELETE FROM sectPosts WHERE id = ?"
+        await db.all(query, postId);
+    } catch(error) {
+        console.log("Failed to delete post:", error);
+    }
+}
+
 // Function to generate an image avatar
-function generateAvatar(letter, width = 100, height = 100) {
-    const newCanvas = canvas.createCanvas(100, 100);
-    const ctx = newCanvas.getContext('2d');
+async function generateAvatar(path, width = 100, height = 100) {
+    try {
+        const newCanvas = canvas.createCanvas(width, height);
+        const ctx = newCanvas.getContext('2d');
+
+        // Load the image from the file
+        const img = await canvas.loadImage(path);
+        
+        // Draw the image onto the canvas
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        return newCanvas.toBuffer('image/png');
+    } catch (error) {
+        console.log("Failed to generate avatar:", error);
+    }
     
-    // Choose a random color from the colors array
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
-    
-    // Set the background color
-    const color = letter.charCodeAt(0) % colors.length;
-    ctx.fillStyle = colors[color];
-    ctx.fillRect(0, 0, 100, 100);
-    
-    // Draw the letter in the center
-    ctx.font = '40px Arial';
-    ctx.fillStyle = '#FFFFFF'; // Text color
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(letter, 50, 50);
-    
-    return newCanvas.toBuffer('image/png');
 }
 
 async function showDatabaseContents() {

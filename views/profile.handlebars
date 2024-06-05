@@ -4,7 +4,9 @@
 <div class="profile-container">
     <div class="profile-avatar">
         <!-- Correct path for the default avatar image -->
-        <img src="/avatar/{{user.username}}" id="post-avatar" alt="Avatar of {{user.username}}">
+        <img src="{{user.avatar_img}}" class="profile-avatar" alt="Avatar of {{user.username}}">
+        <img src="{{user.avatar_frame}}" class="profile-frame" alt="Frame of {{user.username}}">
+
     </div>
     
     <section class="profile-info">
@@ -12,6 +14,7 @@
         <h1>User Profile:</h1>
         <p>{{user.username}}</p>
         <p>{{user.memberSince}}</p>
+        <p>{{user.bio}}</p>
     </section>
 </div>
 
